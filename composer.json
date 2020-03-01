@@ -1,0 +1,35 @@
+{
+    "name": "influx/tic-tac-toe",
+    "description": "TicTacToe game",
+    "type": "project",
+    "license": "MIT",
+    "keywords": [
+        "PHP",
+        "hexlet",
+        "study project"
+    ],
+    "authors": [
+        {
+            "name": "InfluxOW",
+            "email": "krochak_n@mail.ru"
+        }
+    ],
+    "require": {
+        "wp-cli/php-cli-tools": "*",
+        "docopt/docopt": "^1.0"
+    },
+    "require-dev": {
+        "squizlabs/php_codesniffer": "*"
+    },
+    "scripts": {
+        "phpcs": "phpcs"
+    },
+    "bin": [
+        "bin/TicTacToe"
+    ],
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    }
+}
