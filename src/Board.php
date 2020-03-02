@@ -21,8 +21,11 @@ class Board
         }
 
         $rows = array_fill(1, $size, []);
-        $this->map = array_map(function ($row) use ($size) {
-            return $row = array_fill(1, $size, '...');
-        }, $rows);
+        $this->map = array_map(
+            function ($row) use ($size) {
+                return $row = array_fill(1, $size, '...');
+            },
+            $rows
+        );
     }
 }

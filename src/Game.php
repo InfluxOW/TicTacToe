@@ -73,7 +73,7 @@ class Game
         return [$this->isWinner($this->filler2), 'AI'];
     }
 
-    public function PlayerTurn($playerName = null, $row, $col)
+    public function playerTurn($row, $col, $playerName = null)
     {
         if ($playerName) {
             $currentFiller = $this->player1 === $playerName ? $this->filler1 : $this->filler2;

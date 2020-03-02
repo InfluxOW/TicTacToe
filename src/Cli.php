@@ -2,12 +2,12 @@
 
 namespace App;
 
+use App\Game;
+use App\Board;
+
 use function cli\line;
 use function cli\prompt;
 use function cli\choose;
-
-use App\Game;
-use App\Board;
 
 class Cli
 {
@@ -42,5 +42,3 @@ class Cli
         $gameProcess->start();
     }
 }
-
-

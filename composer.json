@@ -22,7 +22,8 @@
         "squizlabs/php_codesniffer": "*"
     },
     "scripts": {
-        "phpcs": "phpcs"
+        "phpcs": "phpcs",
+        "phpcbf": "phpcbf"
     },
     "bin": [
         "bin/TicTacToe"

@@ -23,7 +23,7 @@ class GameProcess
         $first = $this->first === '1' ? 0 : 1;
 
         for ($i = 1 + $first; $i <= sizeof($this->game->map) ** 2 + $first; $i++) {
-            switch($this->enemy) {
+            switch ($this->enemy) {
                 case 'player':
                     $result = $this->pvp($i);
                     if ($result[0] === true) {
@@ -52,12 +52,12 @@ class GameProcess
         if ($i % 2 === 1) {
             line(PHP_EOL . "---{$this->game->player1}'s turn---" . PHP_EOL);
             $turn = $this->turnSelect();
-            return $this->game->PlayerTurn($this->game->player1, $turn[0], $turn[1]);
+            return $this->game->PlayerTurn($turn[0], $turn[1], $this->game->player1);
         }
         if ($i % 2 === 0) {
             line(PHP_EOL . "---{$this->game->player2}'s turn---" . PHP_EOL);
             $turn = $this->turnSelect();
-            return $this->game->PlayerTurn($this->game->player2, $turn[0], $turn[1]);
+            return $this->game->PlayerTurn($turn[0], $turn[1], $this->game->player2);
         }
     }
 
@@ -66,7 +66,7 @@ class GameProcess
         if ($i % 2 === 1) {
             line(PHP_EOL . "---Your turn---" . PHP_EOL);
             $turn = $this->turnSelect();
-            return $this->game->PlayerTurn(null, $turn[0], $turn[1]);
+            return $this->game->PlayerTurn($turn[0], $turn[1], null);
         }
         if ($i % 2 === 0) {
             line(PHP_EOL . "---AI turn---" . PHP_EOL);
@@ -87,4 +87,3 @@ class GameProcess
         return [$row, $col];
     }
 }
-
