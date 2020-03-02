@@ -4,7 +4,6 @@ namespace App;
 
 use function cli\line;
 use function cli\prompt;
-use cli\Table;
 
 class GameProcess
 {
@@ -21,21 +20,71 @@ class GameProcess
 
     public function start()
     {
-        switch($enemy) {
-            case 'player':
-            case 'AI':
-        }
+        $first = $this->first === '1' ? 0 : 1;
 
-        while ($game !== true && $game->isWinner($fillerAI) !== true && $i <= 9) {
-            if ($i % 2 === 1) {
-                $game->PlayerTurn();
-                $i++;
-            }
-            if ($i % 2 === 0) {
-                $game->AITurn();
-                $i++;
+        for ($i = 1 + $first; $i <= sizeof($this->game->map) ** 2 + $first; $i++) {
+            switch($this->enemy) {
+                case 'player':
+                    $result = $this->pvp($i);
+                    if ($result[0] === true) {
+                        line("Congratulations! {$result[1]} won!");
+                        return true;
+                    }
+                    break;
+                case 'AI':
+                    $result = $this->pve($i);
+                    if ($result[0] === true && $result[1] === 'AI') {
+                        line("Don't worry you'll win next time!");
+                        return true;
+                    } elseif ($result[0] === true) {
+                        line("Congratulations! You won!");
+                        return true;
+                    }
+                    break;
             }
         }
-        echo $game->isWinner($fillerPlayer) ? 'Congratulations! You won!' : ($game->isWinner($fillerAI) ? 'Don\'t worry you\'l win next time!' : 'Draw');
+        line('Draw!');
+        return true;
+    }
+
+    public function pvp($i)
+    {
+        if ($i % 2 === 1) {
+            line(PHP_EOL . "---{$this->game->player1}'s turn---" . PHP_EOL);
+            $turn = $this->turnSelect();
+            return $this->game->PlayerTurn($this->game->player1, $turn[0], $turn[1]);
+        }
+        if ($i % 2 === 0) {
+            line(PHP_EOL . "---{$this->game->player2}'s turn---" . PHP_EOL);
+            $turn = $this->turnSelect();
+            return $this->game->PlayerTurn($this->game->player2, $turn[0], $turn[1]);
+        }
+    }
+
+    public function pve($i)
+    {
+        if ($i % 2 === 1) {
+            line(PHP_EOL . "---Your turn---" . PHP_EOL);
+            $turn = $this->turnSelect();
+            return $this->game->PlayerTurn(null, $turn[0], $turn[1]);
+        }
+        if ($i % 2 === 0) {
+            line(PHP_EOL . "---AI turn---" . PHP_EOL);
+            return $this->game->AIturn();
+        }
+    }
+
+    public function turnSelect()
+    {
+        $row = prompt('Select row');
+        $col = prompt('Select column');
+        if ($row > sizeof($this->game->map) || $col > sizeof($this->game->map)) {
+            throw new \Exception('You are out of the board.');
+        }
+        if ($this->game->map[$row][$col] !== '...') {
+            throw new \Exception('You can not refill enemy turns.');
+        }
+        return [$row, $col];
     }
 }
+

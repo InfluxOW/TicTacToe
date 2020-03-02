@@ -2,13 +2,19 @@
 
 namespace App;
 
-use function cli\line;
-use function cli\prompt;
 use cli\Table;
 
 class Game
 {
-    public $properties;
+    private $properties;
+    public $map;
+    public $table;
+    public $player1;
+    public $player2;
+    private $strategy;
+    public $filler1;
+    public $filler2;
+
 
     public function __construct($properties)
     {
@@ -34,14 +40,15 @@ class Game
         }
 
         $this->table = new Table();
-        switch ($properties['borderSize']) {
-            case 'small':
+        $this->table->setRows($this->map);
+        switch (sizeof($properties['board'])) {
+            case 3:
                 $this->table->setHeaders(['Tic', 'Tac', 'Toe']);
                 break;
-            case 'medium':
-                $this->table->setHeaders(['Tic', 'Tac', 'Toe', '<----']);
+            case 4:
+                $this->table->setHeaders(['Tic', 'Tac', 'Toe', '!!!']);
                 break;
-            case 'large':
+            case 5:
                 $this->table->setHeaders(['---','Tic', 'Tac', 'Toe', '---']);
                 break;
         }
@@ -60,36 +67,24 @@ class Game
 
     public function AITurn()
     {
-        line(PHP_EOL . '---AI turn---' . PHP_EOL);
-        
         $this->strategy->move($this);
         $this->table->setRows($this->map);
         $this->table->display();
+        return [$this->isWinner($this->filler2), 'AI'];
     }
 
-    public function PlayerTurn($playerName = null)
+    public function PlayerTurn($playerName = null, $row, $col)
     {
         if ($playerName) {
-            line(PHP_EOL . "---{$playerName}\'s turn---" . PHP_EOL);
             $currentFiller = $this->player1 === $playerName ? $this->filler1 : $this->filler2;
         } else {
-            line(PHP_EOL . "---Your turn---" . PHP_EOL);
             $currentFiller = $this->filler1;
-        }
-        
-        $row = prompt('Select row');
-        $col = prompt('Select column');
-        if ($row > sizeof($this->map) || $col > sizeof($this->map)) {
-            throw new \Exception('You are out of the board.');
-        }
-        if ($this->map[$row][$col] !== '...') {
-            throw new \Exception('You can not refill enemy turns.');
         }
         
         $this->map[$row][$col] = $currentFiller;
         $this->table->setRows($this->map);
         $this->table->display();
-        return $this->isWinner($currentFiller);
+        return [$this->isWinner($currentFiller), $playerName];
     }
 
 
