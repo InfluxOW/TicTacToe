@@ -2,43 +2,47 @@
 
 namespace App;
 
-use App\Game;
-use App\Board;
+use App\Enums\BoardSize;
+use App\Enums\Difficulty;
+use App\Enums\Filler;
+use App\Enums\PlayerType;
+use App\Exceptions\TicTacToeException;
 
+use function cli\choose;
+use function cli\confirm;
 use function cli\line;
 use function cli\prompt;
-use function cli\choose;
 
 class Cli
 {
-    public function run()
+    private const EXIT_CODE_SUCCESS = 0;
+    private const EXIT_CODE_GENERIC_ERROR = 1;
+
+    public static function run(): void
     {
         line(PHP_EOL . 'Welcome to the TicTacToe!' . PHP_EOL);
-    
-        $enemy = choose('Do you want to play against the other player? Otherwise you\'ll play against AI.', 'yn', 'n');
-        if ($enemy === 'n') {
-            $difficulty = choose('Choose your difficulty: easy, normal or hard', 'ENH', 'e');
-        } else {
-            $player1 = prompt('What is player one name?');
-            $player2 = prompt('What is player two name?');
-        }
-        $filler = choose('Choose your filler: X or O', 'XO', 'X');
-        $boardSize = choose('Select board size: small, medium or large', 'SML', 'S');
-        $board = new Board(strtolower($boardSize));
-        $firstTurn = choose('Who will turn first: p1 or p2/AI', '12', '1');
-    
-        $properties = [
-            'enemy' => $enemy === 'y' ? 'player' : 'AI',
-            'difficulty' => isset($difficulty) ? strtolower($difficulty) : null,
-            'names' => [$player1 ?? null, $player2 ?? null],
-            'filler' => strtolower($filler),
-            'board' => $board->map,
-        ];
-    
-        $game = new Game($properties);
-        $game->table->display();
 
-        $gameProcess = new GameProcess($game, $firstTurn, $properties['enemy']);
-        $gameProcess->start();
+        $player = new Player();
+        $player->type = PlayerType::HUMAN;
+        $player->name = prompt('What is your name?');
+        $player->filler = Filler::from(choose('Choose your side: X or O', 'XO', 'X'));
+
+        $opponent = new Player();
+        $opponent->type = confirm('Do you want to play against the other human') ? PlayerType::HUMAN : PlayerType::AI;
+        $opponent->name = ($opponent->type === PlayerType::HUMAN) ? prompt('What is your opponent name?') : 'AI';
+        $opponent->filler = ($player->filler === Filler::O) ? Filler::X : Filler::O;
+        $opponent->ai = ($opponent->type === PlayerType::HUMAN) ? null : Difficulty::from(choose('Choose AI difficulty: Easy, Normal or Hard', 'ENH', 'E'))->ai();
+
+        $boardSize = BoardSize::from(choose('Select board size: Small, Medium or Large', 'SML', 'S'));
+        $board = new Board($boardSize);
+
+        $game = new Game($board, $player, $opponent);
+        try {
+            $game->start(confirm('Do you want to make a first move'));
+            exit(self::EXIT_CODE_SUCCESS);
+        } catch (TicTacToeException $e) {
+            print_r($e->getMessage());
+            exit(self::EXIT_CODE_GENERIC_ERROR);
+        }
     }
 }

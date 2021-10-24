@@ -8,6 +8,9 @@
         "hexlet",
         "study project"
     ],
+    "bin": [
+        "bin/TicTacToe"
+    ],
     "authors": [
         {
             "name": "InfluxOW",
@@ -15,19 +18,17 @@
         }
     ],
     "require": {
+        "php": "^8.1",
         "wp-cli/php-cli-tools": "*",
         "docopt/docopt": "^1.0"
     },
     "require-dev": {
-        "squizlabs/php_codesniffer": "*"
+        "roave/security-advisories": "dev-latest",
+        "squizlabs/php_codesniffer": "*",
+        "phpstan/extension-installer": "^1.1",
+        "phpstan/phpstan": "^0.12.98",
+        "phpstan/phpstan-phpunit": "^0.12.22"
     },
-    "scripts": {
-        "phpcs": "phpcs",
-        "phpcbf": "phpcbf"
-    },
-    "bin": [
-        "bin/TicTacToe"
-    ],
     "autoload": {
         "psr-4": {
             "App\\": "src/"

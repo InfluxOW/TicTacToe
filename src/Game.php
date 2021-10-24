@@ -2,135 +2,130 @@
 
 namespace App;
 
+use App\Enums\Filler;
+use App\Enums\PlayerType;
+use App\Exceptions\BoardException;
 use cli\Table;
+
+use function cli\line;
+use function cli\prompt;
 
 class Game
 {
-    private $properties;
-    public $map;
-    public $table;
-    public $player1;
-    public $player2;
-    private $strategy;
-    public $filler1;
-    public $filler2;
+    private Table $table;
 
-
-    public function __construct($properties)
+    public function __construct(public Board $board, public Player $player, public Player $opponent)
     {
-        $this->map = $properties['board'];
-
-        switch ($properties['enemy']) {
-            case 'player':
-                $this->player1 = $properties['names'][0];
-                $this->player2 = $properties['names'][1];
-                break;
-            case 'AI':
-                switch ($properties['difficulty']) {
-                    case 'e':
-                        $this->strategy = new strategies\Easy();
-                        break;
-                    case 'n':
-                        $this->strategy = new strategies\Normal();
-                        break;
-                    case 'h':
-                        $this->strategy = new strategies\Hard();
-                        break;
-                }
-        }
-
         $this->table = new Table();
-        $this->table->setRows($this->map);
-        switch (sizeof($properties['board'])) {
+        $this->table->setRows($this->board->show());
+        switch ($this->board->length) {
             case 3:
                 $this->table->setHeaders(['Tic', 'Tac', 'Toe']);
                 break;
             case 4:
-                $this->table->setHeaders(['Tic', 'Tac', 'Toe', '!!!']);
+                $this->table->setHeaders(['Tic', 'Tac', 'Toe', '-♥-']);
                 break;
             case 5:
-                $this->table->setHeaders(['---','Tic', 'Tac', 'Toe', '---']);
-                break;
-        }
-
-        switch ($properties['filler']) {
-            case 'x':
-                $this->filler1 = '.X.';
-                $this->filler2 = '.O.';
-                break;
-            case 'o':
-                $this->filler1 = '.O.';
-                $this->filler2 = '.X.';
+                $this->table->setHeaders(['---', 'Tic', 'Tac', 'Toe', '---']);
                 break;
         }
     }
 
-    public function AITurn()
+    public function start(bool $playerMakesFirstMove): void
     {
-        $this->strategy->move($this);
-        $this->table->setRows($this->map);
+        $firstMoveShift = $playerMakesFirstMove ? 0 : 1;
         $this->table->display();
-        return [$this->isWinner($this->filler2), 'AI'];
-    }
 
-    public function playerTurn($row, $col, $playerName = null)
-    {
-        if ($playerName) {
-            $currentFiller = $this->player1 === $playerName ? $this->filler1 : $this->filler2;
-        } else {
-            $currentFiller = $this->filler1;
+        for ($move = 1 + $firstMoveShift; $move <= $this->board->length ** 2 + $firstMoveShift; $move++) {
+            $currentPlayer = ($move % 2 === 1) ? $this->player : $this->opponent;
+            $this->tryMakeMove($currentPlayer);
+            if ($this->isWinner($currentPlayer)) {
+                $this->congratulationsTo($currentPlayer);
+                return;
+            }
         }
-        
-        $this->map[$row][$col] = $currentFiller;
-        $this->table->setRows($this->map);
-        $this->table->display();
-        return [$this->isWinner($currentFiller), $playerName];
+
+        line('Draw!');
     }
 
-
-    private function isWinner($filler)
+    private function tryMakeMove(Player $player): void
     {
-        foreach ($this->map as $row) {
-            if ($this->populatedByOnePlayer($row, $filler)) {
+        $makeMove = function (Player $player) use (&$makeMove): void {
+            try {
+                $this->makeMove($player);
+            } catch (BoardException $e) {
+                print_r(PHP_EOL . $e->getMessage() . PHP_EOL . 'Try again!' . PHP_EOL);
+                $makeMove($player);
+            } finally {
+                $this->table->display();
+            }
+        };
+
+        $makeMove($player);
+    }
+
+    /**
+     * @throws BoardException
+     */
+    private function makeMove(Player $player): void
+    {
+        line(PHP_EOL . "---{$player->name}'s move---" . PHP_EOL);
+
+        if ($player->type === PlayerType::HUMAN) {
+            $row = (int) prompt('Select row');
+            $col = (int) prompt('Select column');
+            $this->board->fill($row, $col, $player->filler);
+        }
+
+        if ($player->type === PlayerType::AI) {
+            $player->ai->move($this->board, $player->filler);
+        }
+
+        $this->table->setRows($this->board->show());
+    }
+
+    private function isWinner(Player $player): bool
+    {
+        foreach ($this->board->show() as $row) {
+            if ($this->rowIsPopulatedBy($row, $player->filler)) {
                 return true;
             }
         }
 
-        for ($i = 1; $i <= sizeof($this->map); $i++) {
-            if ($this->populatedByOnePlayer(array_column($this->map, $i), $filler)) {
+        for ($i = 1; $i <= $this->board->length; $i++) {
+            if ($this->rowIsPopulatedBy(array_column($this->board->show(), $i), $player->filler)) {
                 return true;
             }
         }
 
-        switch (sizeof($this->map)) {
-            case 3:
-                $diagonal1 = [$this->map[1][1], $this->map[2][2], $this->map[3][3]];
-                $diagonal2 = [$this->map[1][3], $this->map[2][2], $this->map[3][1]];
-                break;
-            case 4:
-                $diagonal1 = [$this->map[1][1], $this->map[2][2], $this->map[3][3], $this->map[4][4]];
-                $diagonal2 = [$this->map[1][4], $this->map[2][3], $this->map[3][2], $this->map[4][1]];
-                break;
-            case 5:
-                $diagonal1 = [$this->map[1][1], $this->map[2][2], $this->map[3][3], $this->map[4][4], $this->map[5][5]];
-                $diagonal2 = [$this->map[1][5], $this->map[2][4], $this->map[3][3], $this->map[4][2], $this->map[5][1]];
-                break;
-        }
+        [$diagonal1, $diagonal2] = $this->board->getDiagonals();
 
-        if ($this->populatedByOnePlayer($diagonal1, $filler) || $this->populatedByOnePlayer($diagonal2, $filler)) {
-            return true;
-        }
-
-        return false;
+        return $this->rowIsPopulatedBy($diagonal1, $player->filler) || $this->rowIsPopulatedBy($diagonal2, $player->filler);
     }
 
-    private function populatedByOnePlayer($row, $filler)
+    private function rowIsPopulatedBy(array $row, Filler $filler): bool
     {
         foreach ($row as $value) {
-            if ($value !== $filler) {
-                return false;
+            if (str_contains($value, $filler->name)) {
+                continue;
             }
+
+            return false;
         }
+
         return true;
+    }
+
+    private function congratulationsTo(Player $player): void
+    {
+        line(PHP_EOL);
+
+        if ($player->type === PlayerType::AI) {
+            line('Don\'t worry! You\'ll win next time!');
+        }
+
+        if ($player->type === PlayerType::HUMAN) {
+            line("Congratulations! {$player->name} won!");
+        }
     }
 }
